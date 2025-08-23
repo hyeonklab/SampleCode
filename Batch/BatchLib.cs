@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Batch
@@ -38,6 +39,17 @@ namespace Batch
         /// Check if current time is within allowed time ranges
         /// </summary>
         private bool IsInTimeRange() => _timeRanges.Count == 0 || _timeRanges.Any(r => DateTime.Now.TimeOfDay >= r.Start && DateTime.Now.TimeOfDay <= r.End);
+
+        /// <summary>
+        /// Check if the elapsed time since startTime exceeds the limit
+        /// </summary>
+        /// <param name="startTime"></param>
+        /// <param name="limit"></param>
+        /// <returns></returns>
+        private bool IsOverTime(DateTime startTime, TimeSpan limit)
+        {
+            return DateTime.Now - startTime > limit;
+        }
 
         /// <summary>
         /// run batch process
@@ -77,9 +89,9 @@ namespace Batch
         /// <param name="hourLimit">Maximum running hours from start time</param>
         /// <param name="checkIntervalMin">Interval to check allowed time (minutes)</param>
         public BatchLib<T> Run(
-            int batchSize,
             Action<T> action,
-            int itemSleepMs = 0,
+            int batchSize,
+            int itemSleepMs,
             int batchSleepMs = 0,
             double hourLimit = 24,
             int checkIntervalMin = 5)
@@ -90,9 +102,9 @@ namespace Batch
             for (int i = 0; i < _list.Count; i += batchSize)
             {
                 // Check time limit before starting batch
-                if (DateTime.Now - startTime > limit)
+                if (IsOverTime(startTime, limit))
                 {
-                    Console.WriteLine("Time limit exceeded. Remaining batches skipped.");
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Time limit exceeded. Remaining batches skipped.");
                     break;
                 }
 
@@ -100,33 +112,39 @@ namespace Batch
                 DateTime batchCheckStart = DateTime.Now;
                 while (!IsInTimeRange())
                 {
-                    if (DateTime.Now - startTime > limit)
+                    if (IsOverTime(startTime, limit))
                     {
-                        Console.WriteLine("Time limit exceeded. Remaining batches skipped.");
+                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Time limit exceeded. Remaining batches skipped.");
                         return this;
                     }
 
-                    Console.WriteLine($"[{DateTime.Now:HH:mm}] Not in allowed time → waiting {checkIntervalMin} minutes...");
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Not in allowed time → waiting {checkIntervalMin} minutes...");
                     Thread.Sleep(checkIntervalMin * 60 * 1000); // wait for checkIntervalMin minutes
                 }
 
                 var batch = _list.Skip(i).Take(batchSize).ToList();
-                Console.WriteLine($"[{DateTime.Now:HH:mm}] Batch start: {i / batchSize + 1}");
+                Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Batch start: {i / batchSize + 1}  {i + 1} ~ {i + batch.Count}");
 
                 foreach (var item in batch)
                 {
                     // Check time limit during processing
-                    if (DateTime.Now - startTime > limit)
+                    if (IsOverTime(startTime, limit))
                     {
-                        Console.WriteLine("Time limit exceeded. Remaining items skipped.");
-                        return this;
+                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Time limit exceeded. Remaining items skipped.");
+                        break;
                     }
 
-                    // Stop processing if out of allowed time
-                    if (!IsInTimeRange())
+                    // waiting for allowed time
+                    while (!IsInTimeRange())
                     {
-                        Console.WriteLine("Out of allowed time. Batch processing stopped.");
-                        return this;
+                        if (IsOverTime(startTime, limit))
+                        {
+                            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Time limit exceeded. Remaining batches skipped.");
+                            return this;
+                        }
+
+                        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Paused - waiting for allowed time...");
+                        Thread.Sleep(checkIntervalMin * 60 * 1000);
                     }
 
                     action(item);
