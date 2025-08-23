@@ -2,13 +2,15 @@
 
 Console.WriteLine("Batch processing started...");
 
+int totalItems = 50;
 Console.WriteLine();
-Console.WriteLine("RunBatch 1");
-BatchLib batchLib = new BatchLib();
-batchLib.RunBatch(Enumerable.Range(1, 50).ToList(), 10, 1, 100); // do run with batch size 10 from 1 to 50 samples by seconds and milliseconds
+Console.WriteLine($"RunBatch 1: total {totalItems}");
+var batchLib = new BatchLib<int>([.. Enumerable.Range(1, totalItems)]);
+batchLib.Run(20, d => Console.WriteLine($"    Action processing: {d}"), 100); // do run with batch size 10 from 1 to 50 samples by milliseconds
 
 Console.WriteLine();
-Console.WriteLine("RunBatch 2");
-batchLib.RunBatch(Enumerable.Range(1, 50).ToList(), 10, TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(100)); // do run with batch size 10 from 1 to 50 samples by timespan
+Console.WriteLine($"RunBatch 2: total {totalItems}");
+batchLib = new BatchLib<int>([.. Enumerable.Range(1, 30)]);
+batchLib.Run(10, d => Console.WriteLine($"    Action processing: {d}"), 100); // do run with batch size 10 from 1 to 30 samples by milliseconds
 
 Console.WriteLine("Batch processing completed.");
