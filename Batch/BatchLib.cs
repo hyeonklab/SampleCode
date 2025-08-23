@@ -13,6 +13,7 @@ namespace Batch
     public class BatchLib<T>
     {
         private readonly IList<T> _list;
+        private readonly List<(TimeSpan Start, TimeSpan End)> _timeRanges;
 
         /// <summary>
         /// default constructor
@@ -21,7 +22,22 @@ namespace Batch
         public BatchLib(IList<T> list)
         {
             _list = list;
+            _timeRanges = new List<(TimeSpan, TimeSpan)>();
         }
+
+        /// <summary>
+        /// add allowed time range
+        /// </summary>
+        public BatchLib<T> AddTimeRange(TimeSpan start, TimeSpan end)
+        {
+            _timeRanges.Add((start, end));
+            return this;
+        }
+
+        /// <summary>
+        /// Check if current time is within allowed time ranges
+        /// </summary>
+        private bool IsInTimeRange() => _timeRanges.Count == 0 || _timeRanges.Any(r => DateTime.Now.TimeOfDay >= r.Start && DateTime.Now.TimeOfDay <= r.End);
 
         /// <summary>
         /// run batch process
@@ -29,7 +45,7 @@ namespace Batch
         /// <param name="batchSize"></param>
         /// <param name="action"></param>
         /// <param name="sleepMs"></param>
-        public void Run(int batchSize, Action<T> action, int sleepMs = 0)
+        public BatchLib<T> Run(int batchSize, Action<T> action, int sleepMs = 0)
         {
             for (int i = 0; i < _list.Count; i += batchSize)
             {
@@ -47,6 +63,83 @@ namespace Batch
 
                 Thread.Sleep(1000); // Sleep per batch (option)
             }
+
+            return this;
+        }
+
+        /// <summary>
+        /// Execute batch processing
+        /// </summary>
+        /// <param name="batchSize">Number of items per batch</param>
+        /// <param name="action">Action to process each item</param>
+        /// <param name="itemSleepMs">Sleep time between items (ms)</param>
+        /// <param name="batchSleepMs">Sleep time between batches (ms)</param>
+        /// <param name="hourLimit">Maximum running hours from start time</param>
+        /// <param name="checkIntervalMin">Interval to check allowed time (minutes)</param>
+        public BatchLib<T> Run(
+            int batchSize,
+            Action<T> action,
+            int itemSleepMs = 0,
+            int batchSleepMs = 0,
+            double hourLimit = 24,
+            int checkIntervalMin = 5)
+        {
+            DateTime startTime = DateTime.Now;
+            TimeSpan limit = TimeSpan.FromHours(hourLimit);
+
+            for (int i = 0; i < _list.Count; i += batchSize)
+            {
+                // Check time limit before starting batch
+                if (DateTime.Now - startTime > limit)
+                {
+                    Console.WriteLine("Time limit exceeded. Remaining batches skipped.");
+                    break;
+                }
+
+                // Check if within allowed time ranges
+                DateTime batchCheckStart = DateTime.Now;
+                while (!IsInTimeRange())
+                {
+                    if (DateTime.Now - startTime > limit)
+                    {
+                        Console.WriteLine("Time limit exceeded. Remaining batches skipped.");
+                        return this;
+                    }
+
+                    Console.WriteLine($"[{DateTime.Now:HH:mm}] Not in allowed time → waiting {checkIntervalMin} minutes...");
+                    Thread.Sleep(checkIntervalMin * 60 * 1000); // wait for checkIntervalMin minutes
+                }
+
+                var batch = _list.Skip(i).Take(batchSize).ToList();
+                Console.WriteLine($"[{DateTime.Now:HH:mm}] Batch start: {i / batchSize + 1}");
+
+                foreach (var item in batch)
+                {
+                    // Check time limit during processing
+                    if (DateTime.Now - startTime > limit)
+                    {
+                        Console.WriteLine("Time limit exceeded. Remaining items skipped.");
+                        return this;
+                    }
+
+                    // Stop processing if out of allowed time
+                    if (!IsInTimeRange())
+                    {
+                        Console.WriteLine("Out of allowed time. Batch processing stopped.");
+                        return this;
+                    }
+
+                    action(item);
+
+                    if (itemSleepMs > 0)
+                        Thread.Sleep(itemSleepMs);
+                }
+
+                if (batchSleepMs > 0)
+                    Thread.Sleep(batchSleepMs);
+            }
+
+            return this;
         }
     }
 }
