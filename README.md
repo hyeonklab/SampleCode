@@ -1,2 +1,2 @@
 # SampleCode
-Sample Code Solution By .NET 8
+Sample Code Solution .NET
