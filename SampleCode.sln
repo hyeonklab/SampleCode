@@ -14,6 +14,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Batch", "Batch\Batch.csproj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shuffle", "Shuffle\Shuffle.csproj", "{6B0E91B0-1A9D-A79B-CD7E-11FB2AE14662}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamicSleep", "DynamicSleep\DynamicSleep.csproj", "{E6DEDEF3-8788-4507-A9F0-1783DAEE51C8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,6 +30,10 @@ Global
 		{6B0E91B0-1A9D-A79B-CD7E-11FB2AE14662}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6B0E91B0-1A9D-A79B-CD7E-11FB2AE14662}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6B0E91B0-1A9D-A79B-CD7E-11FB2AE14662}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E6DEDEF3-8788-4507-A9F0-1783DAEE51C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E6DEDEF3-8788-4507-A9F0-1783DAEE51C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E6DEDEF3-8788-4507-A9F0-1783DAEE51C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E6DEDEF3-8788-4507-A9F0-1783DAEE51C8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -35,6 +41,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{8BCEA04E-A997-4AE3-8122-371E44F771EF} = {C8D5274F-AC00-46C7-1F8D-E88E81087A52}
 		{6B0E91B0-1A9D-A79B-CD7E-11FB2AE14662} = {C8D5274F-AC00-46C7-1F8D-E88E81087A52}
+		{E6DEDEF3-8788-4507-A9F0-1783DAEE51C8} = {C8D5274F-AC00-46C7-1F8D-E88E81087A52}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C4A3444F-65E5-4976-94CC-3CA9EE6EE9BA}
