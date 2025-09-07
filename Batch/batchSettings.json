@@ -1,0 +1,18 @@
+{
+    "BatchSize": 3,
+    "ItemSleepMs": 200,
+    "BatchSleepMs": 500,
+    "MaxHours": 0.5,
+    "CheckIntervalMin": 1,
+    "AllowedTimeRanges": [
+        {
+            "Start": "08:00:00",
+            "End": "12:00:00"
+        },
+        {
+            "Start": "14:00:00",
+            "End": "18:05:00"
+        }
+    ]
+}
+
