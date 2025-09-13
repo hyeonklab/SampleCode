@@ -143,12 +143,12 @@ namespace DynamicSleep
         }
     }
 
-    // 다양한 작업 시뮬레이터
+    // 작업 시뮬레이터
     public class WorkSimulators
     {
         private static readonly Random _random = new Random();
 
-        // 1. 가변 처리시간 작업
+        // 가변 처리시간 작업
         public static async Task<string> VariableTimeWorkAsync(int itemId)
         {
             var processingTime = _random.Next(50, 500);
