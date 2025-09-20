@@ -22,6 +22,17 @@ internal class Program
         List<int> list = new(Enumerable.Range(1, 20000));
         var batch = new BatchLib<int>(list, settingsPath);
 
+        // simple batch processing example
+        int batchSize = 1000;
+        string joinList;
+        for (int i = 0, j = 1; i < list.Count; i += batchSize, j++)
+        {
+            var batchItems = list.Skip(i).Take(batchSize).ToList();
+            joinList = string.Join(",", batchItems);
+            Console.WriteLine($"{Environment.NewLine}batch {j} {joinList}");
+        }
+
+        // advanced batch processing with action
         batch.Run(item =>
         {
             Console.WriteLine("Processing: " + item);
