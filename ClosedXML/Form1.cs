@@ -45,10 +45,56 @@ namespace ClosedXML
 
         private void BtnBrowse_Click(object? sender, EventArgs e)
         {
+            using var dlg = new SaveFileDialog
+            {
+                Filter = "Excel Files (*.xlsx)|*.xlsx",
+                FileName = "export_1M.xlsx"
+            };
+            if (dlg.ShowDialog() == DialogResult.OK)
+                txtPath.Text = dlg.FileName;
         }
 
-        private void BtnExport_Click(object? sender, EventArgs e)
+        private async void BtnExport_Click(object? sender, EventArgs e)
         {
+            if (string.IsNullOrEmpty(txtPath.Text))
+            {
+                MessageBox.Show("저장 경로를 선택하세요.");
+                return;
+            }
+
+            btnExport.Enabled = false;
+            progressBar.Value = 0;
+            lblStatus.Text = "추출 시작...";
+
+            const int total = 1_000_000;
+            string path = txtPath.Text;
+
+            var progress = new Progress<int>(count =>
+            {
+                int pct = (int)((double)count / total * 100);
+                progressBar.Value = pct;
+                lblStatus.Text = $"{count:N0} / {total:N0} 처리중... ({pct}%)";
+            });
+
+            await Task.Run(() =>
+            {
+                using var wb = new XLWorkbook();
+                var ws = wb.Worksheets.Add("Orders");
+
+                string[] headers = ["OrderId", "CustomerId", "CustomerName", "Email", "Phone",
+                                     "ProductName", "Category", "Quantity", "UnitPrice", "TotalPrice",
+                                     "OrderDate", "Status"];
+                for (int c = 0; c < headers.Length; c++)
+                    ws.Cell(1, c + 1).Value = headers[c];
+
+                ws.Cell(2, 1).InsertData(GenerateRows(total, progress));
+                wb.SaveAs(path);
+            });
+
+            progressBar.Value = 100;
+            lblStatus.Text = $"완료! {total:N0}건 추출 → {path}";
+            btnExport.Enabled = true;
+            MessageBox.Show($"추출 완료!\n{path}", "완료", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 }
