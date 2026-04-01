@@ -20,7 +20,7 @@ namespace ClosedXML
                 yield return
                 [
                     i,
-                    rng.Next(1000, 9999),
+                    rng.Next(1000, 10000),
                     $"고객{rng.Next(1, 100000):D5}",
                     $"user{rng.Next(10000, 99999)}@email.com",
                     $"010-{rng.Next(1000,9999)}-{rng.Next(1000,9999)}",
