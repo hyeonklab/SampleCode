@@ -1,7 +1,6 @@
-using ClosedXML.Excel;
 using System.Diagnostics;
 
-namespace ClosedXML
+namespace LargeXlsx
 {
     public partial class Form1 : Form
     {
@@ -9,7 +8,12 @@ namespace ClosedXML
         private static readonly string[] Categories = ["전자기기", "주변기기", "저장장치", "디스플레이", "네트워크"];
         private static readonly string[] Statuses = ["완료", "처리중", "취소", "반품", "배송중"];
 
-        private static IEnumerable<object[]> GenerateRows(int startId, int count, int processedBefore, int grandTotal, IProgress<int> progress)
+        private record OrderRow(
+            int OrderId, int CustomerId, string CustomerName, string Email, string Phone,
+            string ProductName, string Category, int Quantity, decimal UnitPrice,
+            decimal TotalPrice, DateTime OrderDate, string Status);
+
+        private static IEnumerable<OrderRow> GenerateRows(int startId, int count, int processedBefore, int grandTotal, IProgress<int> progress)
         {
             var rng = new Random(startId);
             var baseDate = new DateTime(2023, 1, 1);
@@ -18,21 +22,19 @@ namespace ClosedXML
             {
                 int qty = rng.Next(1, 100);
                 decimal unitPrice = Math.Round((decimal)(rng.NextDouble() * 990000 + 10000), 0);
-                yield return
-                [
+                yield return new OrderRow(
                     processedBefore + i,
                     rng.Next(1000, 10000),
                     $"고객{rng.Next(1, 100000):D5}",
                     $"user{rng.Next(10000, 99999)}@email.com",
-                    $"010-{rng.Next(1000,9999)}-{rng.Next(1000,9999)}",
+                    $"010-{rng.Next(1000, 9999)}-{rng.Next(1000, 9999)}",
                     ProductNames[rng.Next(ProductNames.Length)],
                     Categories[rng.Next(Categories.Length)],
                     qty,
                     unitPrice,
                     unitPrice * qty,
                     baseDate.AddDays(rng.Next(0, 730)),
-                    Statuses[rng.Next(Statuses.Length)]
-                ];
+                    Statuses[rng.Next(Statuses.Length)]);
 
                 if (i % 10000 == 0)
                     progress.Report(processedBefore + i);
@@ -46,10 +48,7 @@ namespace ClosedXML
 
         private void BtnBrowse_Click(object? sender, EventArgs e)
         {
-            using var dlg = new FolderBrowserDialog
-            {
-                Description = "저장 폴더 선택"
-            };
+            using var dlg = new FolderBrowserDialog { Description = "저장 폴더 선택" };
             if (dlg.ShowDialog() == DialogResult.OK)
                 txtPath.Text = dlg.SelectedPath;
         }
@@ -95,14 +94,31 @@ namespace ClosedXML
                         int startId = f * chunkSize + 1;
                         string filePath = Path.Combine(folder, $"export_{f + 1:D2}.xlsx");
 
-                        using var wb = new XLWorkbook();
-                        var ws = wb.Worksheets.Add("Orders");
+                        using var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
+                        using var writer = new XlsxWriter(stream);
 
-                        for (int c = 0; c < headers.Length; c++)
-                            ws.Cell(1, c + 1).Value = headers[c];
+                        writer.BeginWorksheet("Orders");
 
-                        ws.Cell(2, 1).InsertData(GenerateRows(startId, chunkSize, f * chunkSize, grandTotal, progress));
-                        wb.SaveAs(filePath);
+                        writer.BeginRow();
+                        foreach (var h in headers)
+                            writer.Write(h);
+
+                        foreach (var row in GenerateRows(startId, chunkSize, f * chunkSize, grandTotal, progress))
+                        {
+                            writer.BeginRow();
+                            writer.Write(row.OrderId);
+                            writer.Write(row.CustomerId);
+                            writer.Write(row.CustomerName);
+                            writer.Write(row.Email);
+                            writer.Write(row.Phone);
+                            writer.Write(row.ProductName);
+                            writer.Write(row.Category);
+                            writer.Write(row.Quantity);
+                            writer.Write(row.UnitPrice);
+                            writer.Write(row.TotalPrice);
+                            writer.Write(row.OrderDate);
+                            writer.Write(row.Status);
+                        }
                     }
                 });
 
